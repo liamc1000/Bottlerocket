@@ -7,226 +7,293 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        /* --- Base Styles --- */
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #111827; /* bg-gray-900 */
+            background-color: #0a0a0a;
+            color: #e0e0e0;
+            background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.05) 1px, transparent 0);
+            background-size: 25px 25px;
         }
-        .status-dot {
-            height: 12px;
-            width: 12px;
-            border-radius: 50%;
-            display: inline-block;
-            transition: background-color 0.5s ease;
+        .hidden { display: none; }
+
+        /* --- Selector Screen Styles --- */
+        #selector-screen .dashboard-card {
+            background-color: rgba(25, 25, 25, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.75rem;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            overflow: hidden;
         }
-        .status-connected { background-color: #22c55e; /* green-500 */ }
-        .status-disconnected { background-color: #ef4444; /* red-500 */ }
-        .data-card {
-            background-color: #1f2937; /* bg-gray-800 */
-            border: 1px solid #374151; /* border-gray-700 */
-            border-radius: 0.75rem; /* rounded-xl */
-            padding: 1.5rem; /* p-6 */
+        #selector-screen .dashboard-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(255, 255, 255, 0.7);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        /* --- Classic Dashboard Styles --- */
+        #classic-dashboard {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827;
+        }
+        #classic-dashboard .status-dot { height: 12px; width: 12px; border-radius: 50%; display: inline-block; transition: background-color 0.5s ease; }
+        #classic-dashboard .status-connected { background-color: #22c55e; }
+        #classic-dashboard .status-disconnected { background-color: #ef4444; }
+        #classic-dashboard .data-card { background-color: #1f2937; border: 1px solid #374151; border-radius: 0.75rem; padding: 1.5rem; transition: all 0.3s ease; }
+        #classic-dashboard .data-card:hover { border-color: #4f46e5; }
+        #classic-dashboard .data-label { color: #9ca3af; font-size: 0.875rem; }
+        #classic-dashboard .data-value { color: #f9fafb; font-size: 2.25rem; font-weight: 700; }
+        #classic-dashboard .data-unit { color: #6b7280; font-size: 1rem; margin-left: 0.5rem; }
+        
+        /* --- Pro Dashboard Styles --- */
+        #pro-dashboard {
+            font-family: 'Inter', sans-serif;
+            background-color: #0a0a0a;
+            color: #e0e0e0;
+        }
+        #pro-dashboard .data-card {
+            background-color: rgba(25, 25, 25, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.75rem;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+        #pro-dashboard .data-label { text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.8rem; color: #a0a0a0; }
+        #pro-dashboard .data-value { font-family: 'Roboto Mono', monospace; color: white; text-shadow: 0 0 8px rgba(255, 255, 255, 0.3); }
+        #pro-dashboard .data-unit { font-family: 'Inter', sans-serif; color: #a0a0a0; }
+        #pro-dashboard .status-dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px; }
+        #pro-dashboard .status-connected { background-color: #33ff57; box-shadow: 0 0 8px #33ff57; }
+        #pro-dashboard .status-disconnected { background-color: #ff4d4d; box-shadow: 0 0 8px #ff4d4d; }
+        #pro-dashboard .btn {
+            background-color: rgba(35, 35, 35, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #e0e0e0;
             transition: all 0.3s ease;
         }
-        .data-card:hover {
-            border-color: #4f46e5; /* indigo-600 */
-        }
-        .data-label {
-            color: #9ca3af; /* text-gray-400 */
-            font-size: 0.875rem; /* text-sm */
-        }
-        .data-value {
-            color: #f9fafb; /* text-gray-50 */
-            font-size: 2.25rem; /* text-4xl */
-            font-weight: 700; /* font-bold */
-        }
-        .data-unit {
-            color: #6b7280; /* text-gray-500 */
-            font-size: 1rem; /* text-base */
-            margin-left: 0.5rem; /* ml-2 */
+        #pro-dashboard .btn:hover:not(:disabled) {
+            background-color: #e0e0e0;
+            color: #111;
+            border-color: #e0e0e0;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
         }
     </style>
 </head>
-<body class="text-gray-200">
+<body class="flex items-center justify-center min-h-screen">
 
-    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
-
-        <!-- Header -->
-        <header class="flex justify-between items-center mb-6">
-            <h1 class="text-3xl font-bold text-white">Bottle Rocket Telemetry</h1>
-            <div class="flex items-center space-x-4">
-                <button id="parachute-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-transform transform hover:scale-105" disabled>Arm Parachute</button>
-                <button id="zero-altitude-btn" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded-lg transition-transform transform hover:scale-105" disabled>Zero Altitude</button>
-                <div id="websocket-status" class="flex items-center space-x-2">
-                    <span class="status-dot status-disconnected"></span>
-                    <span class="text-gray-400">Disconnected</span>
+    <!-- =========== SELECTOR SCREEN =========== -->
+    <div id="selector-screen" class="text-center p-8">
+        <h1 class="text-5xl font-bold mb-2">BOTTLE ROCKET TELEMETRY</h1>
+        <p class="text-xl text-gray-400 mb-12">Select a Dashboard Interface</p>
+        <div class="flex flex-col md:flex-row gap-8">
+            <div id="select-classic" class="dashboard-card w-full md:w-96 cursor-pointer">
+                <div class="p-6">
+                    <h2 class="text-2xl font-bold mb-2">Classic Dashboard</h2>
+                    <p class="text-gray-400">A functional, data-focused layout with a straightforward design. Great for clear readability.</p>
+                </div>
+                <div class="bg-gray-800 p-4 text-sm text-left font-mono">
+                    <p><span class="text-green-400">&gt;</span> Status: <span class="text-yellow-400">Nominal</span></p>
+                    <p><span class="text-green-400">&gt;</span> Style: <span class="text-yellow-400">Utilitarian</span></p>
                 </div>
             </div>
-        </header>
-
-        <!-- Main Grid -->
-        <main class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-            <!-- Left Column: Key Stats & Status -->
-            <div class="lg:col-span-1 flex flex-col gap-6">
-                <!-- Status Card -->
-                <div class="data-card">
-                    <h2 class="text-xl font-semibold text-white mb-4">System Status</h2>
-                    <div class="space-y-3">
-                        <div id="status-bmp280" class="flex justify-between items-center"><span>BMP280 (Altimeter)</span><span class="status-dot status-disconnected"></span></div>
-                        <div id="status-camera" class="flex justify-between items-center"><span>Camera Module 3</span><span class="status-dot status-disconnected"></span></div>
-                        <div id="status-servo" class="flex justify-between items-center"><span>HXT900 Servo</span><span class="status-dot status-disconnected"></span></div>
-                    </div>
+            <div id="select-pro" class="dashboard-card w-full md:w-96 cursor-pointer">
+                <div class="p-6">
+                    <h2 class="text-2xl font-bold mb-2">New Dashboard</h2>
+                    <p class="text-gray-400">A modern, glassmorphism interface inspired by professional mission control systems.</p>
                 </div>
-                <!-- Apogee Card -->
-                <div class="data-card text-center">
-                    <p class="data-label">APOGEE</p>
-                    <p class="data-value" id="apogee-val">0<span class="data-unit">m</span></p>
-                </div>
-                <!-- Pressure Card -->
-                <div class="data-card text-center">
-                    <p class="data-label">PRESSURE</p>
-                    <p class="data-value" id="pressure-val">0<span class="data-unit">hPa</span></p>
+                 <div class="bg-gray-800 p-4 text-sm text-left font-mono">
+                    <p><span class="text-cyan-400">&gt;</span> Status: <span class="text-yellow-400">All Systems Go</span></p>
+                    <p><span class="text-cyan-400">&gt;</span> Style: <span class="text-yellow-400">Sci-Fi Glass</span></p>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <!-- Center Column: Altitude & Velocity -->
-            <div class="lg:col-span-2 flex flex-col gap-6">
-                 <!-- Altitude Graph -->
-                <div class="data-card h-96">
-                    <canvas id="altitudeChart"></canvas>
-                </div>
-                <!-- Live Data Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="data-card text-center">
-                        <p class="data-label">CURRENT ALTITUDE</p>
-                        <p class="data-value" id="altitude-val">0<span class="data-unit">m</span></p>
-                    </div>
-                    <div class="data-card text-center">
-                        <p class="data-label">VELOCITY</p>
-                        <p class="data-value" id="velocity-val">0<span class="data-unit">m/s</span></p>
-                        <p class="text-gray-400" id="velocity-kmh-val">0 km/h</p>
+    <!-- =========== CLASSIC DASHBOARD =========== -->
+    <div id="classic-dashboard" class="hidden">
+        <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+            <header class="flex justify-between items-center mb-6">
+                <h1 class="text-3xl font-bold text-white">Classic Telemetry</h1>
+                <div class="flex items-center space-x-4">
+                    <button id="classic-parachute-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg" disabled>Arm Parachute</button>
+                    <button id="classic-zero-altitude-btn" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded-lg" disabled>Zero Altitude</button>
+                    <div id="classic-websocket-status" class="flex items-center space-x-2">
+                        <span class="status-dot status-disconnected"></span><span class="text-gray-400">Disconnected</span>
                     </div>
                 </div>
-            </div>
-            
-             <!-- Right Column: Camera & Debug -->
-            <div class="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Camera Feed -->
-                <div class="data-card md:col-span-1">
-                    <h2 class="text-xl font-semibold text-white mb-4">Camera Feed</h2>
-                    <div class="bg-black rounded-lg aspect-video flex items-center justify-center">
-                        <img id="camera-feed" src="https://placehold.co/640x480/000000/FFF?text=Camera+Offline" alt="Camera Feed" class="rounded-lg w-full h-full object-cover">
+            </header>
+            <main class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-1 flex flex-col gap-6">
+                    <div class="data-card"><h2 class="text-xl font-semibold text-white mb-4">System Status</h2><div class="space-y-3"><div id="classic-status-bmp280" class="flex justify-between items-center"><span>Altimeter</span><span class="status-dot status-disconnected"></span></div><div id="classic-status-camera" class="flex justify-between items-center"><span>Camera</span><span class="status-dot status-disconnected"></span></div><div id="classic-status-servo" class="flex justify-between items-center"><span>Servo</span><span class="status-dot status-disconnected"></span></div></div></div>
+                    <div class="data-card text-center"><p class="data-label">APOGEE</p><p class="data-value" id="classic-apogee-val">0<span class="data-unit">m</span></p></div>
+                    <div class="data-card text-center"><p class="data-label">PRESSURE</p><p class="data-value" id="classic-pressure-val">0<span class="data-unit">hPa</span></p></div>
+                </div>
+                <div class="lg:col-span-2 flex flex-col gap-6">
+                    <div class="data-card h-96"><canvas id="classic-altitudeChart"></canvas></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="data-card text-center"><p class="data-label">CURRENT ALTITUDE</p><p class="data-value" id="classic-altitude-val">0<span class="data-unit">m</span></p></div>
+                        <div class="data-card text-center"><p class="data-label">VELOCITY</p><p class="data-value" id="classic-velocity-val">0<span class="data-unit">m/s</span></p><p class="text-gray-400" id="classic-velocity-kmh-val">0 km/h</p></div>
                     </div>
                 </div>
-                <!-- Debug Log -->
-                <div class="data-card md:col-span-1">
-                    <h2 class="text-xl font-semibold text-white mb-4">Debug Log</h2>
-                    <div id="debug-log" class="bg-black rounded-lg p-3 h-64 overflow-y-auto font-mono text-sm text-green-400">
-                        <div>[INFO] Dashboard loaded. Waiting for WebSocket connection...</div>
+                <div class="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="data-card md:col-span-1"><h2 class="text-xl font-semibold text-white mb-4">Camera Feed</h2><div class="bg-black rounded-lg aspect-video flex items-center justify-center"><img id="classic-camera-feed" src="https://placehold.co/640x480/000000/FFF?text=Offline" class="rounded-lg w-full h-full object-cover"></div></div>
+                    <div class="data-card md:col-span-1"><h2 class="text-xl font-semibold text-white mb-4">Debug Log</h2><div id="classic-debug-log" class="bg-black rounded-lg p-3 h-64 overflow-y-auto font-mono text-sm text-green-400"></div></div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- =========== PRO DASHBOARD =========== -->
+    <div id="pro-dashboard" class="hidden">
+        <div class="container mx-auto p-4 md:p-6 max-w-screen-2xl">
+            <main class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 flex flex-col gap-6">
+                    <div class="data-card p-4 h-[60vh]"><canvas id="pro-altitudeChart"></canvas></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="data-card p-4 text-center"><p class="data-label">Velocity</p><p class="data-value text-5xl mt-2" id="pro-velocity-val">0.00</p><p class="data-unit text-lg" id="pro-velocity-kmh-val">0.00 km/h</p></div>
+                        <div class="data-card p-4 text-center"><p class="data-label">Apogee</p><p class="data-value text-5xl mt-2 accent-color" id="pro-apogee-val">0.00<span class="data-unit text-3xl ml-2">m</span></p></div>
                     </div>
                 </div>
-            </div>
-        </main>
+                <div class="lg:col-span-1 flex flex-col gap-6">
+                    <div class="data-card p-4"><h2 class="font-bold text-xl mb-4 text-center data-label">Camera Feed</h2><div class="bg-black rounded-md aspect-video"><img id="pro-camera-feed" src="https://placehold.co/640x480/000000/FFF?text=Offline" class="rounded-md w-full h-full object-cover"></div></div>
+                    <div class="data-card p-4"><h2 class="font-bold text-xl mb-4 text-center data-label">System Status</h2><div class="space-y-4 text-lg"><div id="pro-websocket-status" class="flex justify-between items-center"><span>Telemetry Link</span><span class="status-dot status-disconnected"></span></div><div id="pro-status-bmp280" class="flex justify-between items-center"><span>Altimeter</span><span class="status-dot status-disconnected"></span></div><div id="pro-status-camera" class="flex justify-between items-center"><span>Camera</span><span class="status-dot status-disconnected"></span></div><div id="pro-status-servo" class="flex justify-between items-center"><span>Parachute Servo</span><span class="status-dot status-disconnected"></span></div></div></div>
+                    <div class="data-card p-4 text-center"><p class="data-label">Pressure</p><p class="data-value text-3xl mt-1" id="pro-pressure-val">0<span class="data-unit text-xl ml-2">hPa</span></p></div>
+                    <div class="data-card p-4 flex flex-col gap-3"><h2 class="font-bold text-xl mb-2 text-center data-label">Flight Controls</h2><button id="pro-zero-altitude-btn" class="btn w-full py-3 rounded-md font-semibold" disabled>Zero Altitude</button><button id="pro-parachute-btn" class="btn w-full py-3 rounded-md font-semibold" disabled>Arm Parachute</button></div>
+                    <div class="data-card p-4"><h2 class="font-bold text-xl mb-4 text-center data-label">Debug Log</h2><div id="pro-debug-log" class="bg-black/50 rounded p-2 h-32 overflow-y-auto font-mono text-xs text-muted-color"></div></div>
+                </div>
+            </main>
+        </div>
     </div>
 
     <script>
-        // --- Global WebSocket Reference ---
+        // --- Global State ---
         let ws;
         let isParachuteArmed = false;
+        let activeDashboardId = null;
+        let altitudeChart = null;
 
-        // --- DOM Element References ---
-        const altitudeVal = document.getElementById('altitude-val');
-        const apogeeVal = document.getElementById('apogee-val');
-        const velocityVal = document.getElementById('velocity-val');
-        const velocityKmhVal = document.getElementById('velocity-kmh-val');
-        const pressureVal = document.getElementById('pressure-val');
-        const cameraFeed = document.getElementById('camera-feed');
-        const debugLog = document.getElementById('debug-log');
-        const zeroAltitudeBtn = document.getElementById('zero-altitude-btn');
-        const parachuteBtn = document.getElementById('parachute-btn');
-        
-        const statusElements = {
-            websocket: document.getElementById('websocket-status'),
-            bmp280: document.getElementById('status-bmp280').querySelector('.status-dot'),
-            camera: document.getElementById('status-camera').querySelector('.status-dot'),
-            servo: document.getElementById('status-servo').querySelector('.status-dot'),
-        };
+        // --- DOM Element References (will be populated later) ---
+        const uiElements = {};
 
-        // --- Chart.js Setup ---
-        const ctx = document.getElementById('altitudeChart').getContext('2d');
-        const altitudeChart = new Chart(ctx, {
-            type: 'line',
-            data: { datasets: [{
-                label: 'Altitude (m)', data: [], borderColor: '#4f46e5',
-                backgroundColor: 'rgba(79, 70, 229, 0.1)', borderWidth: 2,
-                pointRadius: 0, tension: 0.4, fill: true,
-            }]},
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                scales: {
-                    x: { type: 'time', time: { unit: 'second' }, ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255, 255, 255, 0.1)' }},
-                    y: { beginAtZero: true, ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255, 255, 255, 0.1)' }}
-                },
-                plugins: { legend: { display: false } }
+        function initializeDashboard(dashboardId) {
+            activeDashboardId = dashboardId;
+            document.getElementById('selector-screen').classList.add('hidden');
+            document.getElementById(dashboardId).classList.remove('hidden');
+            document.body.className = (dashboardId === 'pro-dashboard') ? 'theme-monochrome' : 'classic-theme';
+
+            // Populate UI elements object based on active dashboard
+            const d = (id) => document.getElementById(`${dashboardId}-${id}`);
+            uiElements.altitudeVal = d('altitude-val');
+            uiElements.apogeeVal = d('apogee-val');
+            uiElements.velocityVal = d('velocity-val');
+            uiElements.velocityKmhVal = d('velocity-kmh-val');
+            uiElements.pressureVal = d('pressure-val');
+            uiElements.cameraFeed = d('camera-feed');
+            uiElements.debugLog = d('debug-log');
+            uiElements.zeroAltitudeBtn = d('zero-altitude-btn');
+            uiElements.parachuteBtn = d('parachute-btn');
+            uiElements.status = {
+                websocket: d('websocket-status').querySelector('.status-dot'),
+                bmp280: d('status-bmp280').querySelector('.status-dot'),
+                camera: d('status-camera').querySelector('.status-dot'),
+                servo: d('status-servo').querySelector('.status-dot'),
+            };
+            
+            // Initialize Chart
+            const ctx = d('altitudeChart').getContext('2d');
+            let chartConfig;
+            if (dashboardId === 'pro-dashboard') {
+                chartConfig = {
+                    borderColor: '#e0e0e0',
+                    backgroundColor: 'rgba(224, 224, 224, 0.1)',
+                    gridColor: 'rgba(255, 255, 255, 0.15)',
+                    tickColor: '#a0a0a0'
+                };
+            } else {
+                chartConfig = {
+                    borderColor: '#4f46e5',
+                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                    gridColor: 'rgba(255, 255, 255, 0.1)',
+                    tickColor: '#9ca3af'
+                };
             }
-        });
+
+            altitudeChart = new Chart(ctx, {
+                type: 'line',
+                data: { datasets: [{
+                    label: 'Altitude (m)', data: [], borderWidth: 2, pointRadius: 0, tension: 0.4, fill: true,
+                    borderColor: chartConfig.borderColor, backgroundColor: chartConfig.backgroundColor,
+                }]},
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        x: { type: 'time', time: { unit: 'second' }, grid: { color: chartConfig.gridColor }, ticks: { color: chartConfig.tickColor } },
+                        y: { beginAtZero: true, grid: { color: chartConfig.gridColor }, ticks: { color: chartConfig.tickColor } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // Add event listeners
+            uiElements.zeroAltitudeBtn.addEventListener('click', zeroAltitude);
+            uiElements.parachuteBtn.addEventListener('click', handleParachute);
+
+            // Connect WebSocket
+            connectWebSocket();
+        }
 
         // --- Helper Functions ---
         function addDebugLog(message, level = 'INFO') {
             const now = new Date().toLocaleTimeString();
             const logEntry = document.createElement('div');
-            const color = level === 'ERROR' ? 'text-red-500' : (level === 'WARN' ? 'text-yellow-500' : 'text-green-400');
-            logEntry.className = color;
-            logEntry.innerHTML = `[${level}] ${now}: ${message}`;
-            debugLog.appendChild(logEntry);
-            debugLog.scrollTop = debugLog.scrollHeight;
+            let colorClass = 'text-gray-400';
+            if (level === 'ERROR') colorClass = 'text-red-400';
+            if (level === 'WARN') colorClass = 'text-amber-400';
+            logEntry.className = colorClass;
+            logEntry.innerHTML = `&gt; ${message}`;
+            uiElements.debugLog.appendChild(logEntry);
+            uiElements.debugLog.scrollTop = uiElements.debugLog.scrollHeight;
         }
         
         function updateStatus(element, isConnected) {
-            const dot = element.tagName === 'SPAN' ? element : element.querySelector('.status-dot');
-            const text = element.tagName !== 'SPAN' ? element.querySelector('span:last-child') : null;
-
             if (isConnected) {
-                dot.classList.remove('status-disconnected');
-                dot.classList.add('status-connected');
-                if (text) text.textContent = 'Connected';
+                element.classList.remove('status-disconnected');
+                element.classList.add('status-connected');
             } else {
-                dot.classList.remove('status-connected');
-                dot.classList.add('status-disconnected');
-                if (text) text.textContent = 'Disconnected';
+                element.classList.remove('status-connected');
+                element.classList.add('status-disconnected');
             }
         }
 
         function updateUI(data) {
-            altitudeVal.innerHTML = `${data.altitude.toFixed(2)}<span class="data-unit">m</span>`;
-            apogeeVal.innerHTML = `${data.apogee.toFixed(2)}<span class="data-unit">m</span>`;
-            velocityVal.innerHTML = `${data.velocity.toFixed(2)}<span class="data-unit">m/s</span>`;
-            velocityKmhVal.textContent = `${(data.velocity * 3.6).toFixed(2)} km/h`;
-            pressureVal.innerHTML = `${data.pressure.toFixed(2)}<span class="data-unit">hPa</span>`;
+            uiElements.altitudeVal.innerHTML = `${data.altitude.toFixed(2)}<span class="data-unit">m</span>`;
+            if(activeDashboardId === 'pro-dashboard') {
+                uiElements.apogeeVal.innerHTML = `${data.apogee.toFixed(2)}<span class="data-unit text-3xl ml-2">m</span>`;
+                uiElements.velocityVal.textContent = data.velocity.toFixed(2);
+            } else {
+                 uiElements.apogeeVal.innerHTML = `${data.apogee.toFixed(2)}<span class="data-unit">m</span>`;
+                 uiElements.velocityVal.innerHTML = `${data.velocity.toFixed(2)}<span class="data-unit">m/s</span>`;
+            }
+            uiElements.velocityKmhVal.textContent = `${(data.velocity * 3.6).toFixed(2)} km/h`;
+            uiElements.pressureVal.innerHTML = `${data.pressure.toFixed(2)}<span class="data-unit">hPa</span>`;
 
-            updateStatus(statusElements.bmp280, data.status.bmp280);
-            updateStatus(statusElements.camera, data.status.camera);
-            updateStatus(statusElements.servo, data.status.servo);
+            updateStatus(uiElements.status.bmp280, data.status.bmp280);
+            updateStatus(uiElements.status.camera, data.status.camera);
+            updateStatus(uiElements.status.servo, data.status.servo);
             
             const camera_host = window.location.hostname;
             const camera_port = 8080;
             const stream_url = `http://${camera_host}:${camera_port}/`;
-            const placeholder_url = "https://placehold.co/640x480/000000/FFF?text=Camera+Offline";
-
-            if (data.status.camera) {
-                if (cameraFeed.src !== stream_url) {
-                    cameraFeed.src = stream_url;
-                }
-            } else {
-                if (cameraFeed.src !== placeholder_url) {
-                    cameraFeed.src = placeholder_url;
-                }
+            if (data.status.camera && uiElements.cameraFeed.src !== stream_url) {
+                uiElements.cameraFeed.src = stream_url;
             }
 
             altitudeChart.data.datasets[0].data.push({ x: data.timestamp, y: data.altitude });
-            if (altitudeChart.data.datasets[0].data.length > 200) {
+            if (altitudeChart.data.datasets[0].data.length > 300) {
                  altitudeChart.data.datasets[0].data.shift();
             }
             altitudeChart.update('none');
@@ -238,14 +305,14 @@
             const ws_port = 8765;
             const ws_url = `ws://${host}:${ws_port}`;
             
-            addDebugLog(`Attempting to connect to WebSocket at: ${ws_url}`);
+            addDebugLog(`Connecting to ${ws_url}`);
             ws = new WebSocket(ws_url);
 
             ws.onopen = () => {
-                addDebugLog('WebSocket connection established.');
-                updateStatus(statusElements.websocket, true);
-                zeroAltitudeBtn.disabled = false;
-                parachuteBtn.disabled = false;
+                addDebugLog('Telemetry Link Established.');
+                updateStatus(uiElements.status.websocket, true);
+                uiElements.zeroAltitudeBtn.disabled = false;
+                uiElements.parachuteBtn.disabled = false;
             };
 
             ws.onmessage = (event) => {
@@ -253,72 +320,62 @@
                     const data = JSON.parse(event.data);
                     updateUI(data);
                 } catch (e) {
-                    addDebugLog(`Failed to parse incoming data: ${e.message}`, 'ERROR');
+                    addDebugLog(`Data Parse Error: ${e.message}`, 'ERROR');
                 }
             };
 
             ws.onclose = () => {
-                addDebugLog('WebSocket connection closed. Retrying in 3 seconds...', 'WARN');
-                updateStatus(statusElements.websocket, false);
-                Object.values(statusElements).forEach(el => updateStatus(el, false));
-                zeroAltitudeBtn.disabled = true;
-                parachuteBtn.disabled = true;
+                addDebugLog('Telemetry Link Lost. Retrying...', 'WARN');
+                updateStatus(uiElements.status.websocket, false);
+                Object.values(uiElements.status).forEach(el => updateStatus(el, false));
+                uiElements.zeroAltitudeBtn.disabled = true;
+                uiElements.parachuteBtn.disabled = true;
                 setTimeout(connectWebSocket, 3000);
             };
 
-            ws.onerror = (error) => {
-                addDebugLog(`WebSocket error. Is the server running?`, 'ERROR');
-                ws.close();
-            };
+            ws.onerror = () => ws.close();
         }
         
-        // --- Event Listeners ---
-        zeroAltitudeBtn.addEventListener('click', () => {
+        // --- Event Handlers ---
+        function zeroAltitude() {
             if (ws && ws.readyState === WebSocket.OPEN) {
-                const command = { command: "zero_altitude" };
-                ws.send(JSON.stringify(command));
-                addDebugLog("Sent 'zero_altitude' command to server.");
-                apogeeVal.innerHTML = `0.00<span class="data-unit">m</span>`;
+                ws.send(JSON.stringify({ command: "zero_altitude" }));
+                addDebugLog("CMD: Zero Altitude");
+                uiElements.apogeeVal.innerHTML = `0.00<span class="data-unit">m</span>`;
                 altitudeChart.data.datasets[0].data = [];
                 altitudeChart.update();
-            } else {
-                addDebugLog("Cannot zero altitude: WebSocket is not connected.", "ERROR");
             }
-        });
+        }
 
-        parachuteBtn.addEventListener('click', () => {
+        function handleParachute() {
             if (!ws || ws.readyState !== WebSocket.OPEN) {
-                addDebugLog("Cannot send command: WebSocket is not connected.", "ERROR");
+                addDebugLog("CMD FAIL: No Connection", "ERROR");
                 return;
             }
 
             if (!isParachuteArmed) {
-                // Arming sequence
-                const command = { command: "arm_parachute" };
-                ws.send(JSON.stringify(command));
-                addDebugLog("Sent 'arm_parachute' command to server.");
-                
-                // Update button UI
-                parachuteBtn.textContent = "Deploy Parachute";
-                parachuteBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-                parachuteBtn.classList.add('bg-red-600', 'hover:bg-red-700');
+                ws.send(JSON.stringify({ command: "arm_parachute" }));
+                addDebugLog("CMD: Arm Parachute");
+                uiElements.parachuteBtn.textContent = "Deploy Parachute";
+                if(activeDashboardId === 'classic-dashboard') {
+                    uiElements.parachuteBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                    uiElements.parachuteBtn.classList.add('bg-red-600', 'hover:bg-red-700');
+                } else {
+                    uiElements.parachuteBtn.style.backgroundColor = '#b91c1c';
+                    uiElements.parachuteBtn.style.borderColor = '#ef4444';
+                }
                 isParachuteArmed = true;
             } else {
-                // Deployment sequence
-                const command = { command: "deploy_parachute" };
-                ws.send(JSON.stringify(command));
-                addDebugLog("Sent 'deploy_parachute' command to server.");
-                
-                // Update button UI
-                parachuteBtn.textContent = "DEPLOYED";
-                parachuteBtn.disabled = true;
-                parachuteBtn.classList.remove('bg-red-600', 'hover:bg-red-700');
-                parachuteBtn.classList.add('bg-gray-500', 'cursor-not-allowed');
+                ws.send(JSON.stringify({ command: "deploy_parachute" }));
+                addDebugLog("CMD: Deploy Parachute");
+                uiElements.parachuteBtn.textContent = "DEPLOYED";
+                uiElements.parachuteBtn.disabled = true;
             }
-        });
+        }
 
         // --- Initial Load ---
-        connectWebSocket();
+        document.getElementById('select-classic').addEventListener('click', () => initializeDashboard('classic-dashboard'));
+        document.getElementById('select-pro').addEventListener('click', () => initializeDashboard('pro-dashboard'));
 
     </script>
 </body>
